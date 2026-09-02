@@ -19,7 +19,6 @@ import {
   Coffee,
   Dumbbell,
   Moon,
-  PartyPopper,
   Heart,
   Users,
 } from "lucide-react";
@@ -107,7 +106,21 @@ const QUESTIONS: Question[] = [
     category: "logic",
     text: "一度説明したことをまた聞かれると、イライラしてしまう",
     cause: "一度で覚えられるとは限りません。反復して伝えることも大切です",
-    okAlternative: "「もう一回いくね。メモ取っておくと安心だよ」",
+    okAlternative: "「まとめた資料を渡すから、一緒に確認しよう」",
+  },
+  {
+    id: "p6",
+    category: "logic",
+    text: "「プライベートな話をしていないで、掃除くらいやれよ」と思ってしまう",
+    cause: "怠けているように見えても、空いた時間にやることが仕組み化・マニュアル化されていないだけかもしれません",
+    okAlternative: "空いた時間になにをやるかを、あらかじめチェックリストに書いておく",
+  },
+  {
+    id: "p7",
+    category: "logic",
+    text: "「空いた時間にロープレやれって言ったよね？」と問い詰めてしまう",
+    cause: "「言った」だけでは行動は定着しません。いつ・何をするかまでマニュアルに落とし込む必要があります",
+    okAlternative: "「今日はこの時間とこの時間、もし巻きで終わって時間が空いたらロープレしてみてね」と具体的に伝えておく",
   },
   // 第2章：感情への苦手意識（無自覚な圧）
   {
@@ -181,7 +194,28 @@ const QUESTIONS: Question[] = [
     cause: "優秀な人材ほど自立志向が強く、独立で巣立っていく傾向があります",
     okAlternative: "「今いるスタッフに合った期待値」に目線を切り替える",
   },
+  {
+    id: "h6",
+    category: "expectation",
+    text: "「早くデビューできるように、少しでも練習しようという気持ちはないのかな」と感じてしまう",
+    cause: "成長意欲の熱量は人それぞれ。同じ熱意を前提にすると、噛み合わなさに苛立ちやすくなります",
+    okAlternative: "「デビューに向けて、今できることを一緒に確認しよう」と歩幅を合わせる",
+  },
+  {
+    id: "h7",
+    category: "expectation",
+    text: "「給料を上げてあげたいのに、なぜもっと売上を上げようと思わないんだろう」と感じてしまう",
+    cause: "給料と売上のつながりが、スタッフ側にはまだ見えていないだけかもしれません",
+    okAlternative: "「売上が上がると、こう還元できる」と、つながりを具体的に伝える",
+  },
 ];
+
+/** 各カテゴリの設問数（章によって数が異なる場合にも対応できるよう動的に算出） */
+const CATEGORY_MAX: Record<CategoryKey, number> = {
+  logic: QUESTIONS.filter((q) => q.category === "logic").length,
+  emotion: QUESTIONS.filter((q) => q.category === "emotion").length,
+  expectation: QUESTIONS.filter((q) => q.category === "expectation").length,
+};
 
 /** 「あなたは〇〇タイプ」診断用のタイプ定義（カテゴリ別＋伝達ロスが少ない場合の特別タイプ） */
 const GOOD_TYPE = {
@@ -234,15 +268,15 @@ const STRESS_TIPS: StressTip[] = [
 
 const COLOR_HEX: Record<FlagColor, string> = {
   green: "#4C9A6A",
-  yellow: "#D9A441",
+  yellow: "#C9A66B",
   red: "#C94F4F",
 };
 
 const RANK_STYLE: Record<RankLetter, { bg: string; text: string; hex: string }> = {
-  S: { bg: "bg-gradient-to-br from-rose to-rose-deep", text: "text-white", hex: "#E96A8D" },
-  A: { bg: "bg-rose/90", text: "text-white", hex: "#E96A8D" },
-  B: { bg: "bg-gold", text: "text-white", hex: "#D9A441" },
-  C: { bg: "bg-sand", text: "text-ink", hex: "#EAE3DD" },
+  S: { bg: "bg-gradient-to-br from-rose to-rose-deep", text: "text-white", hex: "#FF8DA1" },
+  A: { bg: "bg-rose/90", text: "text-white", hex: "#FF8DA1" },
+  B: { bg: "bg-gold", text: "text-white", hex: "#C9A66B" },
+  C: { bg: "bg-sand", text: "text-ink", hex: "#E6DCC3" },
   D: { bg: "bg-brick", text: "text-white", hex: "#C94F4F" },
 };
 
@@ -258,18 +292,21 @@ function scoreToRank(score: number): RankLetter {
   return "D";
 }
 
-function categoryColor(count: number): FlagColor {
-  if (count >= 3) return "red";
-  if (count >= 1) return "yellow";
+function categoryColor(count: number, max: number): FlagColor {
+  if (max <= 0) return "green";
+  const ratio = count / max;
+  if (ratio >= 0.5) return "red";
+  if (ratio > 0) return "yellow";
   return "green";
 }
 
 /** カテゴリ別チェック数から「あなたは〇〇タイプ」を判定する */
 function determineType(
   total: number,
+  totalMax: number,
   categoryCounts: Record<CategoryKey, number>
 ): { name: string; description: string } {
-  if (total <= 2) return GOOD_TYPE;
+  if (totalMax === 0 || total / totalMax <= 0.15) return GOOD_TYPE;
   // 最もチェックが多いカテゴリを採用（同数の場合は 詰め方 > 感情 > 期待値 の順を優先）
   const priorityOrder: CategoryKey[] = ["logic", "emotion", "expectation"];
   let topKey: CategoryKey = "logic";
@@ -283,23 +320,24 @@ function determineType(
   return TYPE_INFO[topKey];
 }
 
-/** 総合診断：「モラハラ」ではなく「伝達効率」という理系的な切り口で提示する */
-function overallDiagnosis(total: number): { label: string; message: string; color: FlagColor } {
-  if (total <= 2) {
+/** 総合診断：「モラハラ」ではなく「伝達効率」という理系的な切り口で提示する（設問数が変わっても機能するよう割合ベースで判定） */
+function overallDiagnosis(total: number, totalMax: number): { label: string; message: string; color: FlagColor } {
+  const ratio = totalMax > 0 ? total / totalMax : 0;
+  if (ratio <= 0.15) {
     return {
       label: "伝達効率が高い状態です",
       message: "言いたいことが、リスクなくきちんと伝わっている状態です。この調子をキープしましょう。",
       color: "green",
     };
   }
-  if (total <= 5) {
+  if (ratio <= 0.35) {
     return {
       label: "少し伝達ロスが出ています",
       message: "内容は正しくても、伝わり方で少しロスが出ている状態です。下のNGワード変換から見直してみましょう。",
       color: "yellow",
     };
   }
-  if (total <= 9) {
+  if (ratio <= 0.6) {
     return {
       label: "伝達ロスが目立つ状態です",
       message: "言っていることは正しいのに、伝え方によって受け取ってもらえていない可能性があります。",
@@ -313,11 +351,12 @@ function overallDiagnosis(total: number): { label: string; message: string; colo
   };
 }
 
-function categoryAdvice(count: number, category: CategoryInfo): string {
+function categoryAdvice(count: number, max: number, category: CategoryInfo): string {
+  const ratio = max > 0 ? count / max : 0;
   if (count === 0) {
     return `${category.label}は理想的な状態です。この調子を維持しましょう。`;
   }
-  if (count <= 2) {
+  if (ratio < 0.4) {
     return `${category.label}に、少し気になる項目があります。「${category.quote}」を意識して見直してみましょう。`;
   }
   return `${category.label}は伝達ロスのサインが多く出ています。「${category.quote}」からまず着手しましょう。`;
@@ -331,11 +370,12 @@ async function exportResultImage(params: {
   score: number;
   rank: RankLetter;
   total: number;
+  totalMax: number;
   typeName: string;
   diagLabel: string;
   logoSrc: string;
 }) {
-  const { score, rank, total, typeName, diagLabel, logoSrc } = params;
+  const { score, rank, total, totalMax, typeName, diagLabel, logoSrc } = params;
 
   if ("fonts" in document) {
     await (document as Document & { fonts: FontFaceSet }).fonts.ready;
@@ -349,7 +389,7 @@ async function exportResultImage(params: {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  ctx.fillStyle = "#F8F5F2";
+  ctx.fillStyle = "#F5F0E4";
   ctx.fillRect(0, 0, W, H);
 
   const logo = new Image();
@@ -370,9 +410,9 @@ async function exportResultImage(params: {
   };
 
   let y = 130 + logoH + 70;
-  centerText("B t o E 式", y, "bold 30px 'Zen Kaku Gothic New', sans-serif", "#E96A8D");
+  centerText("B t o E 式", y, "bold 30px 'Zen Kaku Gothic New', sans-serif", "#FF8DA1");
   y += 70;
-  centerText("社長の伝達ロス診断", y, "bold 52px 'Shippori Mincho', serif", "#222222");
+  centerText("社長の伝達ロス診断", y, "bold 52px 'Shippori Mincho', serif", "#111111");
   y += 110;
 
   const cardY = y;
@@ -380,7 +420,12 @@ async function exportResultImage(params: {
   const cardX = 80;
   const cardW = W - cardX * 2;
   const radius = 32;
-  ctx.fillStyle = "#2b2320";
+  // 深い黒からハワイアンパープルへ沈む、クラシックハワイの夕景をイメージしたグラデーション
+  const cardGradient = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
+  cardGradient.addColorStop(0, "#111111");
+  cardGradient.addColorStop(0.55, "#2E2038");
+  cardGradient.addColorStop(1, "#B48BC7");
+  ctx.fillStyle = cardGradient;
   ctx.beginPath();
   ctx.moveTo(cardX + radius, cardY);
   ctx.arcTo(cardX + cardW, cardY, cardX + cardW, cardY + cardH, radius);
@@ -402,9 +447,9 @@ async function exportResultImage(params: {
   centerText("あなたは", cardY + 260, "26px 'Zen Kaku Gothic New', sans-serif", "#FFFFFFAA");
   // タイプ名は長さに応じてフォントサイズを調整
   const typeFontSize = typeName.length > 10 ? 44 : 52;
-  centerText(typeName, cardY + 330, `bold ${typeFontSize}px 'Shippori Mincho', serif`, "#E96A8D");
+  centerText(typeName, cardY + 330, `bold ${typeFontSize}px 'Shippori Mincho', serif`, "#FF8DA1");
 
-  centerText(`${total} / 15`, cardY + 470, "bold 110px 'Shippori Mincho', serif", "#FFFFFF");
+  centerText(`${total} / ${totalMax}`, cardY + 470, "bold 110px 'Shippori Mincho', serif", "#FFFFFF");
   centerText("該当した項目数", cardY + 520, "24px 'Zen Kaku Gothic New', sans-serif", "#FFFFFFAA");
 
   centerText(diagLabel, cardY + 610, "bold 30px 'Zen Kaku Gothic New', sans-serif", "#FFFFFF");
@@ -415,7 +460,7 @@ async function exportResultImage(params: {
     "#BtoE式 #社長の伝達ロス診断",
     cardY + cardH + 70,
     "24px 'Zen Kaku Gothic New', sans-serif",
-    "#22222299"
+    "#111111AA"
   );
 
   const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
@@ -446,17 +491,29 @@ function RankBadge({ rank, size = "md" }: { rank: RankLetter; size?: "md" | "lg"
   );
 }
 
-function CategoryBar({ label, count, color }: { label: string; count: number; color: FlagColor }) {
+function CategoryBar({
+  label,
+  count,
+  max,
+  color,
+}: {
+  label: string;
+  count: number;
+  max: number;
+  color: FlagColor;
+}) {
   return (
     <div>
       <div className="flex items-center justify-between text-sm font-body mb-1">
         <span className="text-ink/70">{label}</span>
-        <span className="font-semibold text-ink">{count} / 5</span>
+        <span className="font-semibold text-ink">
+          {count} / {max}
+        </span>
       </div>
       <div className="h-2.5 rounded-full bg-sand overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-500 ease-out"
-          style={{ width: `${(count / 5) * 100}%`, backgroundColor: COLOR_HEX[color] }}
+          style={{ width: `${max > 0 ? (count / max) * 100 : 0}%`, backgroundColor: COLOR_HEX[color] }}
         />
       </div>
     </div>
@@ -483,8 +540,8 @@ export default function App() {
     const total = categoryCounts.logic + categoryCounts.emotion + categoryCounts.expectation;
     const score = Math.round(100 - (total / QUESTIONS.length) * 100);
     const rank = scoreToRank(score);
-    const diag = overallDiagnosis(total);
-    const type = determineType(total, categoryCounts);
+    const diag = overallDiagnosis(total, QUESTIONS.length);
+    const type = determineType(total, QUESTIONS.length, categoryCounts);
 
     const priorities = [...CATEGORIES]
       .sort((a, b) => categoryCounts[b.key] - categoryCounts[a.key])
@@ -492,8 +549,9 @@ export default function App() {
         order: i + 1,
         category: c,
         count: categoryCounts[c.key],
-        color: categoryColor(categoryCounts[c.key]),
-        advice: categoryAdvice(categoryCounts[c.key], c),
+        max: CATEGORY_MAX[c.key],
+        color: categoryColor(categoryCounts[c.key], CATEGORY_MAX[c.key]),
+        advice: categoryAdvice(categoryCounts[c.key], CATEGORY_MAX[c.key], c),
       }));
 
     const checkedQuestions = QUESTIONS.filter((q) => checked[q.id]);
@@ -511,6 +569,7 @@ export default function App() {
         score: result.score,
         rank: result.rank,
         total: result.total,
+        totalMax: QUESTIONS.length,
         typeName: result.type.name,
         diagLabel: result.diag.label,
         logoSrc: btoeLogo,
@@ -545,7 +604,19 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-5 pt-6 space-y-6">
+      {/* 波モチーフの飾り罫（ブランドのOcean Blue／Hawaiian Purpleをさりげなく） */}
+      <div className="max-w-3xl mx-auto px-5 pt-3" aria-hidden="true">
+        <svg viewBox="0 0 600 16" className="w-full h-3 opacity-70">
+          <path
+            d="M0 8 Q 25 0, 50 8 T 100 8 T 150 8 T 200 8 T 250 8 T 300 8 T 350 8 T 400 8 T 450 8 T 500 8 T 550 8 T 600 8"
+            fill="none"
+            stroke="#44C1BE"
+            strokeWidth="1.5"
+          />
+        </svg>
+      </div>
+
+      <main className="max-w-3xl mx-auto px-5 pt-4 space-y-6">
         {/* イントロ */}
         <div className="space-y-2">
           <p className="font-display text-xl font-bold text-center">
@@ -641,7 +712,7 @@ export default function App() {
               </p>
 
               <div className="border-t border-sand pt-5">
-                <div className="font-display text-4xl font-bold">{result.total} / 15</div>
+                <div className="font-display text-4xl font-bold">{result.total} / {QUESTIONS.length}</div>
                 <div className="text-xs text-ink/40 mb-2">該当した項目数</div>
                 <div
                   className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-2"
@@ -668,7 +739,8 @@ export default function App() {
                     key={cat.key}
                     label={cat.label}
                     count={result.categoryCounts[cat.key]}
-                    color={categoryColor(result.categoryCounts[cat.key])}
+                    max={CATEGORY_MAX[cat.key]}
+                    color={categoryColor(result.categoryCounts[cat.key], CATEGORY_MAX[cat.key])}
                   />
                 ))}
               </div>
@@ -694,7 +766,7 @@ export default function App() {
                       <div className="font-semibold text-sm flex items-center gap-1.5">
                         {p.category.icon}
                         {p.category.label}
-                        <span className="text-xs text-ink/40 font-normal">（{p.count}/5）</span>
+                        <span className="text-xs text-ink/40 font-normal">（{p.count}/{p.max}）</span>
                       </div>
                       <div className="text-xs text-ink/60 mt-0.5 leading-relaxed">{p.advice}</div>
                     </div>
@@ -749,71 +821,58 @@ export default function App() {
               </p>
             </section>
 
-            {/* 共感メッセージ・ストレス解消法（手書き風の手紙デザイン） */}
+            {/* 共感メッセージ・ストレス解消法（上品な便箋デザイン） */}
             <section className="animate-fade-in-up">
               <div
-                className="relative -rotate-1 rounded-lg border border-sand/80 p-7 md:p-9 shadow-salon-lg"
-                style={{
-                  backgroundColor: "#FFFDF8",
-                  backgroundImage:
-                    "repeating-linear-gradient(to bottom, transparent, transparent 33px, #EAE3DD 34px)",
-                }}
+                className="relative rounded-salon border border-sand p-8 md:p-10"
+                style={{ backgroundColor: "#FFFDF9" }}
               >
-                {/* マスキングテープ（左右2本） */}
-                <span
-                  className="absolute -top-3 left-8 w-16 h-6 bg-rose/30 rotate-[-6deg] shadow-sm"
-                  aria-hidden="true"
-                />
-                <span
-                  className="absolute -top-3 right-10 w-14 h-6 bg-gold/30 rotate-[5deg] shadow-sm"
-                  aria-hidden="true"
-                />
+                <p className="text-[11px] tracking-[0.3em] text-rose/70 mb-1">FROM ALLY</p>
+                <h2 className="font-display text-lg font-bold mb-6">社長へ</h2>
 
-                <div className="flex items-center gap-2 mb-5">
-                  <Heart size={16} className="text-rose" />
-                  <span className="font-hand text-lg text-ink/70">社長へ</span>
-                </div>
+                <div className="w-10 h-px bg-sand mb-6" />
 
-                <p className="font-hand text-[17px] leading-loose text-ink/80 mb-6">
+                <p className="font-hand text-[19px] leading-[2.1] text-ink/80 mb-8">
                   とは言っても、感情を抑えてのスタッフ対応。ストレス、すごい溜まりますよね。私もです。
                   <br />
                   <br />
                   たくさんのストレスと責任感を、たった1人で抱えるしんどさ。社長、毎日本当にお疲れ様です。
                   <br />
                   <br />
-                  とは言っても、社長の健康が一番。おすすめのストレス解消法を、いくつかご紹介しますね。
+                  だからこそ、社長の健康が一番。おすすめのストレス解消法を、いくつかご紹介しますね。
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
-                  {STRESS_TIPS.map((tip) => (
+                <div className="space-y-0 mb-8">
+                  {STRESS_TIPS.map((tip, i) => (
                     <div
                       key={tip.text}
-                      className="flex items-center gap-2.5 rounded-lg bg-white/70 border border-sand/60 px-3.5 py-2.5 text-xs text-ink/70"
+                      className={`flex items-center gap-3 py-3 text-sm text-ink/70 ${
+                        i !== STRESS_TIPS.length - 1 ? "border-b border-sand/70" : ""
+                      }`}
                     >
-                      <span className="text-rose shrink-0">{tip.icon}</span>
+                      <span className="text-rose/70 shrink-0">{tip.icon}</span>
                       {tip.text}
                     </div>
                   ))}
                 </div>
 
-                <div className="rounded-lg bg-white/70 border border-dashed border-rose/40 p-5 text-center mb-6">
-                  <PartyPopper size={20} className="mx-auto text-rose mb-2" />
-                  <p className="font-hand text-base text-ink/80 mb-1">1人で抱えなくて、大丈夫。</p>
-                  <p className="text-xs text-ink/50 mb-4">
-                    いつか、同じ立場の社長同士で、飲み会でもしましょう！
+                <div className="border-t border-sand pt-7 mb-8 text-center">
+                  <p className="text-sm text-ink/70 mb-1">1人で抱えなくて、大丈夫。</p>
+                  <p className="text-xs text-ink/40 mb-5">
+                    いつか、同じ立場の社長同士で、飲み会でもしましょう。
                   </p>
                   <a
                     href={COMMUNITY_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-medium px-4 py-2.5 rounded-full bg-white border border-rose/30 text-rose hover:bg-rose/10 transition"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium px-5 py-2.5 rounded-full border border-rose/40 text-rose-deep hover:bg-rose/5 transition"
                   >
-                    <Users size={14} />
+                    <Users size={13} />
                     社長同士がつながる場はこちら
                   </a>
                 </div>
 
-                <p className="font-hand text-xl text-rose-deep text-right pr-2">－ アリー</p>
+                <p className="font-display text-base text-ink/50 text-right">－　アリー</p>
               </div>
             </section>
 
@@ -823,7 +882,7 @@ export default function App() {
                 <Share2 size={14} />
                 この結果をシェアしよう
               </div>
-              <div className="relative overflow-hidden rounded-salon shadow-salon-lg bg-gradient-to-br from-[#2b2320] via-[#3a2a30] to-rose-deep text-white p-7">
+              <div className="relative overflow-hidden rounded-salon shadow-salon-lg bg-gradient-to-br from-ink via-[#2E2038] to-purple text-white p-7">
                 <div
                   className="absolute inset-0 opacity-20"
                   style={{
@@ -853,7 +912,7 @@ export default function App() {
 
                   <div className="mb-6">
                     <div className="text-xs text-white/60 mb-1">該当項目数</div>
-                    <div className="font-display text-5xl font-bold leading-none">{result.total} / 15</div>
+                    <div className="font-display text-5xl font-bold leading-none">{result.total} / {QUESTIONS.length}</div>
                     <div className="text-sm font-medium mt-3">{result.diag.label}</div>
                   </div>
 
