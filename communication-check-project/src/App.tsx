@@ -8,8 +8,6 @@ import {
   ListChecks,
   Info,
   MessageSquareWarning,
-  HeartCrack,
-  Scale,
   ArrowRight,
   Download,
   Loader2,
@@ -21,13 +19,18 @@ import {
   Moon,
   Heart,
   Users,
+  Swords,
+  Brain,
+  Megaphone,
+  HeartHandshake,
+  Hourglass,
 } from "lucide-react";
 
 /* ============================================================
    型定義
    ============================================================ */
 
-type CategoryKey = "logic" | "emotion" | "expectation";
+type CategoryKey = "shogun" | "hakase" | "coach" | "chowa" | "idea" | "mypace";
 type FlagColor = "green" | "yellow" | "red";
 type RankLetter = "S" | "A" | "B" | "C" | "D";
 
@@ -41,211 +44,310 @@ interface Question {
 
 interface CategoryInfo {
   key: CategoryKey;
-  label: string;
+  order: string; // "01"〜"06"
+  label: string; // タイプ名
+  catch: string; // サブキャッチ（例：正しさで突き進む）
+  voice: string; // キャラのセリフ（吹き出し用）
+  description: string; // 診断結果に表示する説明文
   icon: React.ReactNode;
-  quote: string; // アリー社長風の一言
+  colorClass: string; // Tailwindのカラー名（brick/ocean/gold/sage/rose/purple）
+  colorHex: string;
+  bgHex: string; // キャラカードの背景色に合わせたパステルトーン
+  quote: string; // アリー社長風の一言（優先順位カードで使用）
+}
+
+type Gender = "male" | "female";
+
+/** 性別ごとのキャラクター画像パスを算出（/characters/male|female/xxx.png） */
+function characterImagePath(type: CategoryInfo, gender: Gender): string {
+  return `/characters/${gender}/${type.key}.jpg`;
 }
 
 /* ============================================================
-   定数：診断項目（3カテゴリ・計15問／NGワード→OK変換データ）
+   定数：6タイプの定義（「あなたの伝え方のクセ社長図鑑」準拠）
    ============================================================ */
 
 const CATEGORIES: CategoryInfo[] = [
   {
-    key: "logic",
-    label: "詰め方",
-    icon: <MessageSquareWarning size={16} />,
+    key: "shogun",
+    order: "01",
+    label: "正論武将タイプ",
+    catch: "正しさで突き進む",
+    voice: "いや、それ間違ってないよね!?",
+    description:
+      "正しいことを、正しく主張できる人です。ただ、正しさが強すぎると、スタッフは「反論できない空気」を感じてしまうことがあります。",
+    icon: <Swords size={16} />,
+    colorClass: "brick",
+    colorHex: "#C94F4F",
+    bgHex: "#F7D9DC",
     quote: "正しさは、伝え方次第で凶器にもなる。",
   },
   {
-    key: "emotion",
-    label: "感情への苦手意識",
-    icon: <HeartCrack size={16} />,
-    quote: "沈黙は反抗じゃない。脳の防御反応。",
+    key: "hakase",
+    order: "02",
+    label: "ロジカル博士タイプ",
+    catch: "結論から話したい",
+    voice: "で？結論は？",
+    description:
+      "論理的に物事を整理するのが得意な人です。ただ、結論を急ぐあまり、スタッフのプロセスや気持ちを置き去りにしてしまうことがあります。",
+    icon: <Brain size={16} />,
+    colorClass: "ocean",
+    colorHex: "#44C1BE",
+    bgHex: "#D6ECEC",
+    quote: "結論を急ぐ前に、まず聞く。",
   },
   {
-    key: "expectation",
-    label: "期待値のズレ",
-    icon: <Scale size={16} />,
+    key: "coach",
+    order: "03",
+    label: "期待の鬼コーチタイプ",
+    catch: "もっとできるはず！",
+    voice: "もっといけるだろ!!",
+    description:
+      "スタッフの可能性を信じて、成長を後押しできる人です。ただ、期待の熱量が強すぎると、スタッフには終わりのないプレッシャーとして伝わることがあります。",
+    icon: <Megaphone size={16} />,
+    colorClass: "gold",
+    colorHex: "#C9A66B",
+    bgHex: "#FBEACD",
     quote: "期待は、時に重荷になる。",
+  },
+  {
+    key: "chowa",
+    order: "04",
+    label: "優しすぎる調整役タイプ",
+    catch: "波風立てたくない",
+    voice: "みんな大丈夫かな…",
+    description:
+      "チームの空気や人間関係に、誰よりも気を配れる人です。ただ、気を遣いすぎて、伝えるべきことまで飲み込んでしまうことがあります。",
+    icon: <HeartHandshake size={16} />,
+    colorClass: "sage",
+    colorHex: "#4C9A6A",
+    bgHex: "#DCEEE0",
+    quote: "伝えないことも、選択の結果。",
+  },
+  {
+    key: "idea",
+    order: "05",
+    label: "自由なアイデアマンタイプ",
+    catch: "考える前に動いちゃう",
+    voice: "いいじゃん！やってみよう！",
+    description:
+      "アイデアと行動力にあふれた人です。ただ、勢いで動くぶん、スタッフには「どこに向かっているのか分からない」と映ってしまうことがあります。",
+    icon: <Lightbulb size={16} />,
+    colorClass: "rose",
+    colorHex: "#FF8DA1",
+    bgHex: "#FCE1EA",
+    quote: "勢いの前に、ゴールを一言。",
+  },
+  {
+    key: "mypace",
+    order: "06",
+    label: "マイペース探求者タイプ",
+    catch: "じっくり考えたい",
+    voice: "わかる…それ、もう少し考えたい…",
+    description:
+      "物事をじっくり考え、納得してから動ける人です。ただ、そのペースが、スタッフを待たせる時間になっていることがあります。",
+    icon: <Hourglass size={16} />,
+    colorClass: "purple",
+    colorHex: "#B48BC7",
+    bgHex: "#E9E0F2",
+    quote: "待たせる時間も、共有すれば安心に変わる。",
   },
 ];
 
+/* ============================================================
+   定数：診断項目（6タイプ × 各4問、計24問／NGワード→OK変換データ）
+   ============================================================ */
+
 const QUESTIONS: Question[] = [
-  // 第1章：詰め方（論理で殴るタイプ）
+  // 01 正論武将タイプ
   {
-    id: "p1",
-    category: "logic",
+    id: "sg1",
+    category: "shogun",
+    text: "「いや、それ違うでしょ」とすぐに否定してしまう",
+    cause: "否定から入ると、相手は次から意見を言わなくなってしまいます",
+    okAlternative: "「なるほど、それでこう考えたんだね」と一度受け止めてから伝える",
+  },
+  {
+    id: "sg2",
+    category: "shogun",
+    text: "自分が正しいと思うと、意見を曲げられない",
+    cause: "正しさを譲らない姿勢は、相手にとって「話しても無駄」という空気になりがちです",
+    okAlternative: "「私はこう思うけど、どう思う？」と問いかけの形にする",
+  },
+  {
+    id: "sg3",
+    category: "shogun",
+    text: "会議で反対意見が出ると、つい論破しにいってしまう",
+    cause: "論破された経験は、次の発言を怖くさせてしまいます",
+    okAlternative: "「面白い視点だね、もう少し聞かせて」とまず広げる",
+  },
+  {
+    id: "sg4",
+    category: "shogun",
     text: "「なんでそんなこともわからないの？」と言ってしまう",
-    cause: "能力否定＝人格攻撃と受け取られやすく、信頼関係を損ないます",
-    okAlternative: "「ここまでは合ってる。ここから先を一緒に確認しよう」",
+    cause: "能力否定と受け取られやすく、信頼関係を損ないます",
+    okAlternative: "「ここまでは合ってる。ここから一緒に確認しよう」",
+  },
+  // 02 ロジカル博士タイプ
+  {
+    id: "hk1",
+    category: "hakase",
+    text: "「で？結論は？」と話を遮ってしまう",
+    cause: "話の途中で遮られると、それ以上何も話したくなくなってしまいます",
+    okAlternative: "「まず最後まで聞くね」と一呼吸置いてから確認する",
   },
   {
-    id: "p2",
-    category: "logic",
-    text: "「普通に考えたらわかるよね？」が口癖",
-    cause: "「普通」は自分の基準。相手にとっての当たり前とは限りません",
-    okAlternative: "「私の中では当たり前になってたかも。一から説明するね」",
+    id: "hk2",
+    category: "hakase",
+    text: "スタッフの説明が長いと、イライラしてしまう",
+    cause: "話し方の癖は人それぞれ。結論から話せない人も一定数います",
+    okAlternative: "「大事なところだけ先に教えて」とフォーマットを示してあげる",
   },
   {
-    id: "p3",
-    category: "logic",
-    text: "「よくそんなこと社長に言えるな」と言ったことがある",
-    cause: "発言を封じる＝以後、報告・相談が来なくなる（経営リスクに直結）",
-    okAlternative: "「言ってくれてありがとう。まず整理しよう」",
+    id: "hk3",
+    category: "hakase",
+    text: "根拠やデータがないと、納得できない",
+    cause: "感覚や経験則も、立派な判断材料であることがあります",
+    okAlternative: "「感覚でいいから、まず聞かせて」と間口を広げる",
   },
   {
-    id: "p4",
-    category: "logic",
-    text: "「なんで自分で調べないの？」と思ってしまう",
-    cause: "調べ方を教わっていないだけかもしれません。能力ではなく状況の問題です",
-    okAlternative: "「調べ方、一緒に確認しておこうか」",
+    id: "hk4",
+    category: "hakase",
+    text: "感覚的な意見に「で、根拠は？」と聞き返してしまう",
+    cause: "詰問のように感じられ、発言そのものを控えるようになってしまいます",
+    okAlternative: "「そう感じた理由、一緒に言語化してみようか」",
+  },
+  // 03 期待の鬼コーチタイプ
+  {
+    id: "co1",
+    category: "coach",
+    text: "「もっとできるはず」と、成果を出しても満足できない",
+    cause: "期待に終わりがないと、相手はどれだけやっても報われないと感じます",
+    okAlternative: "「ここまでできたね」とまず今の到達点を認める",
   },
   {
-    id: "p5",
-    category: "logic",
-    text: "一度説明したことをまた聞かれると、イライラしてしまう",
-    cause: "一度で覚えられるとは限りません。反復して伝えることも大切です",
-    okAlternative: "「まとめた資料を渡すから、一緒に確認しよう」",
+    id: "co2",
+    category: "coach",
+    text: "「もっといけるだろ！」とハッパをかけてしまう",
+    cause: "追い込む言葉は、モチベーションよりプレッシャーとして残りやすいです",
+    okAlternative: "「次はここを一緒に伸ばそう」と次の一歩を具体的に示す",
   },
   {
-    id: "p6",
-    category: "logic",
-    text: "「プライベートな話をしていないで、掃除くらいやれよ」と思ってしまう",
-    cause: "怠けているように見えても、空いた時間にやることが仕組み化・マニュアル化されていないだけかもしれません",
-    okAlternative: "空いた時間になにをやるかを、あらかじめチェックリストに書いておく",
-  },
-  {
-    id: "p7",
-    category: "logic",
-    text: "「空いた時間にロープレやれって言ったよね？」と問い詰めてしまう",
-    cause: "「言った」だけでは行動は定着しません。いつ・何をするかまでマニュアルに落とし込む必要があります",
-    okAlternative: "「今日はこの時間とこの時間、もし巻きで終わって時間が空いたらロープレしてみてね」と具体的に伝えておく",
-  },
-  // 第2章：感情への苦手意識（無自覚な圧）
-  {
-    id: "d1",
-    category: "emotion",
-    text: "ため息をついてしまう",
-    cause: "無言のサインが「話しかけづらい」空気を作ってしまいます",
-    okAlternative: "深呼吸してから「一旦状況を整理しよう」と言葉にする",
-  },
-  {
-    id: "d2",
-    category: "emotion",
-    text: "語尾がきつくなっている自覚がない",
-    cause: "本人が思う以上に、相手には強い圧として伝わっていることがあります",
-    okAlternative: "語尾を「〜だよね」「〜かな」に置き換える",
-  },
-  {
-    id: "d3",
-    category: "emotion",
-    text: "スタッフが感情的になると、対応に困る",
-    cause: "感情的な反応は防御反応であることが多く、責めても逆効果です",
-    okAlternative: "「一旦落ち着こう。5分後にまた話そう」と間を置く",
-  },
-  {
-    id: "d4",
-    category: "emotion",
-    text: "「感情論だな」と思うと、話を聞く気が失せる",
-    cause: "話を聞いてもらえない経験が続くと、相談自体をしなくなります",
-    okAlternative: "感情の部分は受け止め、事実の部分だけ確認する",
-  },
-  {
-    id: "d5",
-    category: "emotion",
-    text: "相手が黙ると、さらに問い詰めてしまう",
-    cause: "沈黙は反抗ではなく戸惑いのサイン。追及すると余計に固まってしまいます",
-    okAlternative: "「今じゃなくていいよ。落ち着いたら聞かせて」",
-  },
-  // 第3章：期待値のズレ・比較
-  {
-    id: "h1",
-    category: "expectation",
-    text: "平凡なスタッフにも、優秀な人と同じ成長意欲を求めてしまう",
-    cause: "人によってモチベーションの源は異なります。同じ熱量を求めすぎると負担になります",
-    okAlternative: "「今のペースで大丈夫。困ったら聞いてね」で線を引く",
-  },
-  {
-    id: "h2",
-    category: "expectation",
-    text: "「期待してるよ」と伝えることは、相手のためになると思っている",
-    cause: "期待はプレッシャーにもなり得ます。応えられないと自己評価が下がります",
+    id: "co3",
+    category: "coach",
+    text: "「期待してるよ」と伝えることが多い",
+    cause: "期待は励みにもなりますが、応えられないと自己評価を下げる重荷にもなります",
     okAlternative: "期待を言葉にせず、「できたこと」を具体的に伝える",
   },
   {
-    id: "h3",
-    category: "expectation",
-    text: "指示を待っているだけのスタッフに、苛立ちを感じる",
-    cause: "指示待ちは「安心」を求めるタイプの特性であり、欠陥ではありません",
-    okAlternative: "「指示があれば動ける」という強みとして役割を設計する",
+    id: "co4",
+    category: "coach",
+    text: "できて当たり前だと思ってしまう",
+    cause: "「当たり前」の基準は、社長と同じ経験値がなければ揃いません",
+    okAlternative: "「これができるようになったんだね」と成長そのものを言葉にする",
+  },
+  // 04 優しすぎる調整役タイプ
+  {
+    id: "ch1",
+    category: "chowa",
+    text: "「みんな大丈夫かな」と気を遣いすぎてしまう",
+    cause: "気遣いが強すぎると、必要な指摘やお願いまで飲み込んでしまいます",
+    okAlternative: "気遣いはそのままに、伝えるべきことは分けて伝える",
   },
   {
-    id: "h4",
-    category: "expectation",
-    text: "できるスタッフとできないスタッフを、無意識に比較してしまう",
-    cause: "比較されている空気は、本人のパフォーマンスを実際に下げてしまいます",
-    okAlternative: "個人の過去の状態と比較する（他者比較をしない）",
+    id: "ch2",
+    category: "chowa",
+    text: "言いたいことがあっても、飲み込んでしまう",
+    cause: "伝えないままでいると、後で大きな不満として溜まってしまいます",
+    okAlternative: "「言いにくいんだけど」と前置きしてから伝えてみる",
   },
   {
-    id: "h5",
-    category: "expectation",
-    text: "優秀なスタッフがいる同業者を見て、羨ましいと感じることがある",
-    cause: "優秀な人材ほど自立志向が強く、独立で巣立っていく傾向があります",
-    okAlternative: "「今いるスタッフに合った期待値」に目線を切り替える",
+    id: "ch3",
+    category: "chowa",
+    text: "注意すべき場面で、つい話をぼかしてしまう",
+    cause: "ぼかした指摘は伝わらず、同じことが繰り返される原因になります",
+    okAlternative: "事実だけは具体的に、伝え方はやわらかくする",
   },
   {
-    id: "h6",
-    category: "expectation",
-    text: "「早くデビューできるように、少しでも練習しようという気持ちはないのかな」と感じてしまう",
-    cause: "成長意欲の熱量は人それぞれ。同じ熱意を前提にすると、噛み合わなさに苛立ちやすくなります",
-    okAlternative: "「デビューに向けて、今できることを一緒に確認しよう」と歩幅を合わせる",
+    id: "ch4",
+    category: "chowa",
+    text: "スタッフに嫌われるのが怖くて、強く言えない",
+    cause: "嫌われたくない気持ちは自然ですが、言わないことも一つの選択の結果です",
+    okAlternative: "「あなたのために伝えるね」と目的を先に伝える",
+  },
+  // 05 自由なアイデアマンタイプ
+  {
+    id: "id1",
+    category: "idea",
+    text: "「いいじゃん、やってみよう」とすぐ動いてしまう",
+    cause: "勢いだけで進めると、スタッフは何を求められているか分からなくなります",
+    okAlternative: "「まずゴールだけ共有するね」と一言添えてから動く",
   },
   {
-    id: "h7",
-    category: "expectation",
-    text: "「給料を上げてあげたいのに、なぜもっと売上を上げようと思わないんだろう」と感じてしまう",
-    cause: "給料と売上のつながりが、スタッフ側にはまだ見えていないだけかもしれません",
-    okAlternative: "「売上が上がると、こう還元できる」と、つながりを具体的に伝える",
+    id: "id2",
+    category: "idea",
+    text: "説明が思いつきベースで、後から内容が変わることがある",
+    cause: "指示がころころ変わると、スタッフは動くこと自体に慎重になってしまいます",
+    okAlternative: "変更した理由も一緒に伝えると、混乱が減ります",
+  },
+  {
+    id: "id3",
+    category: "idea",
+    text: "指示が感覚的で、具体性に欠けることがある",
+    cause: "「いい感じに」は人によって基準がまったく異なります",
+    okAlternative: "「例えばこんなイメージ」と具体例を1つ添える",
+  },
+  {
+    id: "id4",
+    category: "idea",
+    text: "決めたことを、すぐに変えてしまう",
+    cause: "決定がすぐ覆ると、スタッフは本気で取り組む意味を見失ってしまいます",
+    okAlternative: "変更は「なぜ変えるか」とセットで伝える",
+  },
+  // 06 マイペース探求者タイプ
+  {
+    id: "mp1",
+    category: "mypace",
+    text: "「もう少し考えたい」と、即答を避けてしまう",
+    cause: "返事が遅いと、スタッフは判断を仰げず仕事が止まってしまいます",
+    okAlternative: "「いつまでに返事するね」と期限だけ先に伝える",
+  },
+  {
+    id: "mp2",
+    category: "mypace",
+    text: "自分のペースを崩されると、ストレスを感じる",
+    cause: "急かされることへの苦手意識は自然ですが、相手にも締切があります",
+    okAlternative: "「巻きで一度考えるね」と自分なりのペースで区切りをつける",
+  },
+  {
+    id: "mp3",
+    category: "mypace",
+    text: "決断に時間がかかり、スタッフを待たせてしまう",
+    cause: "待たされる時間は、スタッフにとって不安の時間にもなります",
+    okAlternative: "「今検討中、〇日には返すね」と経過を共有する",
+  },
+  {
+    id: "mp4",
+    category: "mypace",
+    text: "急かされると、本来のパフォーマンスが出ない",
+    cause: "急かす側にも事情がありますが、それを伝えないと単なるすれ違いになります",
+    okAlternative: "「急いでるのは分かる、少しだけ時間をもらえる？」と伝える",
   },
 ];
 
-/** 各カテゴリの設問数（章によって数が異なる場合にも対応できるよう動的に算出） */
-const CATEGORY_MAX: Record<CategoryKey, number> = {
-  logic: QUESTIONS.filter((q) => q.category === "logic").length,
-  emotion: QUESTIONS.filter((q) => q.category === "emotion").length,
-  expectation: QUESTIONS.filter((q) => q.category === "expectation").length,
-};
-
-/** 「あなたは〇〇タイプ」診断用のタイプ定義（カテゴリ別＋伝達ロスが少ない場合の特別タイプ） */
-const GOOD_TYPE = {
-  name: "伝達職人タイプ",
-  description: "言葉選びに大きな課題は見られません。今のスタイルを大切にしましょう。",
-};
-const TYPE_INFO: Record<CategoryKey, { name: string; description: string }> = {
-  logic: {
-    name: "詰めすぎロジック社長タイプ",
-    description:
-      "正しさで詰めてしまう傾向があります。同じ内容でも、伝え方次第でスタッフの受け取り方が大きく変わります。",
-  },
-  emotion: {
-    name: "無自覚プレッシャー社長タイプ",
-    description: "本人に悪気はなくても、態度や語調が無言のプレッシャーになっている可能性があります。",
-  },
-  expectation: {
-    name: "期待暴走社長タイプ",
-    description: "期待や比較が、知らず知らずのうちにスタッフの負担になっているかもしれません。",
-  },
-};
+/** 各カテゴリの設問数（動的に算出） */
+const CATEGORY_MAX: Record<CategoryKey, number> = CATEGORIES.reduce(
+  (acc, c) => ({ ...acc, [c.key]: QUESTIONS.filter((q) => q.category === c.key).length }),
+  {} as Record<CategoryKey, number>
+);
 
 /** デモ回答（初めての人向けサンプル） */
 const SAMPLE_CHECKED: Record<string, boolean> = {
-  p1: true,
-  p4: true,
-  d2: true,
-  d5: true,
-  h2: true,
-  h5: true,
+  sg1: true,
+  sg4: true,
+  co2: true,
+  co3: true,
+  id3: true,
 };
 
 /** 有料note（根本改善コンテンツ）のURL。実際のリンクに差し替えてください */
@@ -300,24 +402,17 @@ function categoryColor(count: number, max: number): FlagColor {
   return "green";
 }
 
-/** カテゴリ別チェック数から「あなたは〇〇タイプ」を判定する */
-function determineType(
-  total: number,
-  totalMax: number,
-  categoryCounts: Record<CategoryKey, number>
-): { name: string; description: string } {
-  if (totalMax === 0 || total / totalMax <= 0.15) return GOOD_TYPE;
-  // 最もチェックが多いカテゴリを採用（同数の場合は 詰め方 > 感情 > 期待値 の順を優先）
-  const priorityOrder: CategoryKey[] = ["logic", "emotion", "expectation"];
-  let topKey: CategoryKey = "logic";
+/** カテゴリ別チェック数から「あなたは〇〇タイプ」を判定する（同数の場合は01〜06の掲載順を優先） */
+function determineType(categoryCounts: Record<CategoryKey, number>): CategoryInfo {
+  let top: CategoryInfo = CATEGORIES[0];
   let topCount = -1;
-  for (const key of priorityOrder) {
-    if (categoryCounts[key] > topCount) {
-      topCount = categoryCounts[key];
-      topKey = key;
+  for (const c of CATEGORIES) {
+    if (categoryCounts[c.key] > topCount) {
+      topCount = categoryCounts[c.key];
+      top = c;
     }
   }
-  return TYPE_INFO[topKey];
+  return top;
 }
 
 /** 総合診断：「モラハラ」ではなく「伝達効率」という理系的な切り口で提示する（設問数が変わっても機能するよう割合ベースで判定） */
@@ -354,12 +449,12 @@ function overallDiagnosis(total: number, totalMax: number): { label: string; mes
 function categoryAdvice(count: number, max: number, category: CategoryInfo): string {
   const ratio = max > 0 ? count / max : 0;
   if (count === 0) {
-    return `${category.label}は理想的な状態です。この調子を維持しましょう。`;
+    return `${category.label}の傾向は理想的な状態です。この調子を維持しましょう。`;
   }
   if (ratio < 0.4) {
     return `${category.label}に、少し気になる項目があります。「${category.quote}」を意識して見直してみましょう。`;
   }
-  return `${category.label}は伝達ロスのサインが多く出ています。「${category.quote}」からまず着手しましょう。`;
+  return `${category.label}の傾向が強く出ています。「${category.quote}」からまず着手しましょう。`;
 }
 
 /* ============================================================
@@ -369,13 +464,14 @@ function categoryAdvice(count: number, max: number, category: CategoryInfo): str
 async function exportResultImage(params: {
   score: number;
   rank: RankLetter;
+  type: CategoryInfo;
+  gender: Gender;
   total: number;
   totalMax: number;
-  typeName: string;
   diagLabel: string;
   logoSrc: string;
 }) {
-  const { score, rank, total, totalMax, typeName, diagLabel, logoSrc } = params;
+  const { score, type, gender, total, totalMax, diagLabel, logoSrc } = params;
 
   if ("fonts" in document) {
     await (document as Document & { fonts: FontFaceSet }).fonts.ready;
@@ -398,9 +494,9 @@ async function exportResultImage(params: {
     logo.onload = () => resolve();
     logo.onerror = () => resolve();
   });
-  const logoW = 340;
-  const logoH = (logo.height / logo.width) * logoW || 140;
-  if (logo.width) ctx.drawImage(logo, (W - logoW) / 2, 130, logoW, logoH);
+  const logoW = 300;
+  const logoH = (logo.height / logo.width) * logoW || 120;
+  if (logo.width) ctx.drawImage(logo, (W - logoW) / 2, 100, logoW, logoH);
 
   const centerText = (text: string, y: number, font: string, color: string) => {
     ctx.font = font;
@@ -409,22 +505,45 @@ async function exportResultImage(params: {
     ctx.fillText(text, W / 2, y);
   };
 
-  let y = 130 + logoH + 70;
-  centerText("B t o E 式", y, "bold 30px 'Zen Kaku Gothic New', sans-serif", "#FF8DA1");
-  y += 70;
-  centerText("社長の伝達ロス診断", y, "bold 52px 'Shippori Mincho', serif", "#111111");
-  y += 110;
+  let y = 100 + logoH + 55;
+  centerText("B t o E 式", y, "bold 26px 'Zen Kaku Gothic New', sans-serif", "#FF8DA1");
+  y += 55;
+  centerText("社長の伝達ロス診断", y, "bold 40px 'Shippori Mincho', serif", "#111111");
+  y += 90;
+
+  // キャラクター画像を先に読み込み、実寸から縦幅を算出してからカードの高さを決める
+  const charImg = new Image();
+  let charLoaded = false;
+  await new Promise<void>((resolve) => {
+    charImg.onload = () => {
+      charLoaded = true;
+      resolve();
+    };
+    charImg.onerror = () => resolve();
+    charImg.src = characterImagePath(type, gender);
+  });
+
+  const imgTargetW = 460;
+  const imgTargetH = charLoaded
+    ? Math.round((charImg.naturalHeight / charImg.naturalWidth) * imgTargetW)
+    : 260;
+
+  const topPad = 70;
+  const gapAfterImg = 36;
+  const labelBlockH = charLoaded ? 0 : 172;
+  const gapAfterLabel = charLoaded ? 30 : 18;
+  const statsBlockH = 300;
+  const bottomPad = 70;
+  const cardH = topPad + imgTargetH + gapAfterImg + labelBlockH + gapAfterLabel + statsBlockH + bottomPad;
 
   const cardY = y;
-  const cardH = 820;
   const cardX = 80;
   const cardW = W - cardX * 2;
   const radius = 32;
-  // 深い黒からハワイアンパープルへ沈む、クラシックハワイの夕景をイメージしたグラデーション
   const cardGradient = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
   cardGradient.addColorStop(0, "#111111");
   cardGradient.addColorStop(0.55, "#2E2038");
-  cardGradient.addColorStop(1, "#B48BC7");
+  cardGradient.addColorStop(1, type.colorHex);
   ctx.fillStyle = cardGradient;
   ctx.beginPath();
   ctx.moveTo(cardX + radius, cardY);
@@ -435,31 +554,53 @@ async function exportResultImage(params: {
   ctx.closePath();
   ctx.fill();
 
-  const rankHex = RANK_STYLE[rank].hex;
-  const badgeCx = W / 2;
-  const badgeCy = cardY + 130;
-  ctx.beginPath();
-  ctx.arc(badgeCx, badgeCy, 72, 0, Math.PI * 2);
-  ctx.fillStyle = rankHex;
-  ctx.fill();
-  centerText(rank, badgeCy + 26, "bold 70px 'Shippori Mincho', serif", "#FFFFFF");
+  let cy = cardY + topPad;
 
-  centerText("あなたは", cardY + 260, "26px 'Zen Kaku Gothic New', sans-serif", "#FFFFFFAA");
-  // タイプ名は長さに応じてフォントサイズを調整
-  const typeFontSize = typeName.length > 10 ? 44 : 52;
-  centerText(typeName, cardY + 330, `bold ${typeFontSize}px 'Shippori Mincho', serif`, "#FF8DA1");
+  if (charLoaded) {
+    // 角丸の実寸カード画像をそのまま描画
+    const imgX = W / 2 - imgTargetW / 2;
+    const imgRadius = 20;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(imgX + imgRadius, cy);
+    ctx.arcTo(imgX + imgTargetW, cy, imgX + imgTargetW, cy + imgTargetH, imgRadius);
+    ctx.arcTo(imgX + imgTargetW, cy + imgTargetH, imgX, cy + imgTargetH, imgRadius);
+    ctx.arcTo(imgX, cy + imgTargetH, imgX, cy, imgRadius);
+    ctx.arcTo(imgX, cy, imgX + imgTargetW, cy, imgRadius);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(charImg, imgX, cy, imgTargetW, imgTargetH);
+    ctx.restore();
+    cy += imgTargetH + gapAfterImg;
+  } else {
+    // 画像未準備時は丸バッジ＋テキストで代替表示
+    const r = 90;
+    const circleCy = cy + r;
+    ctx.beginPath();
+    ctx.arc(W / 2, circleCy, r, 0, Math.PI * 2);
+    ctx.fillStyle = type.colorHex;
+    ctx.fill();
+    centerText(type.order, circleCy + 30, "bold 80px 'Shippori Mincho', serif", "#FFFFFF");
+    cy += imgTargetH + gapAfterImg;
 
-  centerText(`${total} / ${totalMax}`, cardY + 470, "bold 110px 'Shippori Mincho', serif", "#FFFFFF");
-  centerText("該当した項目数", cardY + 520, "24px 'Zen Kaku Gothic New', sans-serif", "#FFFFFFAA");
+    centerText("あなたは", cy + 24, "24px 'Zen Kaku Gothic New', sans-serif", "#FFFFFFAA");
+    const typeFontSize = type.label.length > 10 ? 42 : 50;
+    centerText(type.label, cy + 82, `bold ${typeFontSize}px 'Shippori Mincho', serif`, "#FFFFFF");
+    centerText(`「${type.voice}」`, cy + 130, "24px 'Zen Kaku Gothic New', sans-serif", type.colorHex);
+    cy += labelBlockH;
+  }
 
-  centerText(diagLabel, cardY + 610, "bold 30px 'Zen Kaku Gothic New', sans-serif", "#FFFFFF");
+  cy += gapAfterLabel;
 
-  centerText(`経営スコア ${score} / 100`, cardY + 700, "24px 'Zen Kaku Gothic New', sans-serif", "#FFFFFFAA");
+  centerText(`${total} / ${totalMax}`, cy + 90, "bold 90px 'Shippori Mincho', serif", "#FFFFFF");
+  centerText("該当した項目数", cy + 135, "22px 'Zen Kaku Gothic New', sans-serif", "#FFFFFFAA");
+  centerText(diagLabel, cy + 210, "bold 26px 'Zen Kaku Gothic New', sans-serif", "#FFFFFF");
+  centerText(`経営スコア ${score} / 100`, cy + 270, "22px 'Zen Kaku Gothic New', sans-serif", "#FFFFFFAA");
 
   centerText(
     "#BtoE式 #社長の伝達ロス診断",
-    cardY + cardH + 70,
-    "24px 'Zen Kaku Gothic New', sans-serif",
+    cardY + cardH + 65,
+    "22px 'Zen Kaku Gothic New', sans-serif",
     "#111111AA"
   );
 
@@ -520,6 +661,50 @@ function CategoryBar({
   );
 }
 
+/** キャラクターカード。アップロード前は自動的にアイコン＋番号のプレースホルダーで代替表示される */
+function CharacterAvatar({
+  type,
+  gender,
+  width = 220,
+  onStatus,
+}: {
+  type: CategoryInfo;
+  gender: Gender;
+  width?: number;
+  onStatus?: (loaded: boolean) => void;
+}) {
+  const [status, setStatus] = useState<"loading" | "loaded" | "failed">("loading");
+  return (
+    <div
+      key={`${type.key}-${gender}`}
+      className="rounded-2xl overflow-hidden shadow-salon shrink-0"
+      style={{ width, backgroundColor: type.bgHex }}
+    >
+      {status !== "failed" ? (
+        <img
+          src={characterImagePath(type, gender)}
+          alt={type.label}
+          onLoad={() => {
+            setStatus("loaded");
+            onStatus?.(true);
+          }}
+          onError={() => {
+            setStatus("failed");
+            onStatus?.(false);
+          }}
+          className="w-full h-auto block"
+        />
+      ) : (
+        <div className="flex flex-col items-center justify-center gap-2 py-14" style={{ color: type.colorHex }}>
+          {type.icon}
+          <span className="font-display font-bold text-3xl">{type.order}</span>
+          <span className="text-[10px] text-ink/40">画像準備中</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ============================================================
    メインアプリケーション
    ============================================================ */
@@ -527,24 +712,43 @@ function CategoryBar({
 export default function App() {
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [isExporting, setIsExporting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
+  const [gender, setGender] = useState<Gender | null>(null);
 
   const toggle = (id: string) => setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
-  const loadSample = () => setChecked(SAMPLE_CHECKED);
-  const resetAll = () => setChecked({});
+  const loadSample = () => {
+    setChecked(SAMPLE_CHECKED);
+    if (!gender) setGender("female");
+    setSubmitted(true);
+  };
+  const resetAll = () => {
+    setChecked({});
+    setSubmitted(false);
+    setGender(null);
+  };
+  const canDiagnose = gender !== null && Object.values(checked).some(Boolean);
+  const handleDiagnose = () => {
+    if (canDiagnose) setSubmitted(true);
+  };
 
   const result = useMemo(() => {
-    const categoryCounts: Record<CategoryKey, number> = { logic: 0, emotion: 0, expectation: 0 };
+    const categoryCounts = CATEGORIES.reduce(
+      (acc, c) => ({ ...acc, [c.key]: 0 }),
+      {} as Record<CategoryKey, number>
+    );
     for (const q of QUESTIONS) {
       if (checked[q.id]) categoryCounts[q.category] += 1;
     }
-    const total = categoryCounts.logic + categoryCounts.emotion + categoryCounts.expectation;
+    const total = Object.values(categoryCounts).reduce((sum, n) => sum + n, 0);
     const score = Math.round(100 - (total / QUESTIONS.length) * 100);
     const rank = scoreToRank(score);
     const diag = overallDiagnosis(total, QUESTIONS.length);
-    const type = determineType(total, QUESTIONS.length, categoryCounts);
+    const type = determineType(categoryCounts);
 
     const priorities = [...CATEGORIES]
       .sort((a, b) => categoryCounts[b.key] - categoryCounts[a.key])
+      .slice(0, 3)
       .map((c, i) => ({
         order: i + 1,
         category: c,
@@ -560,7 +764,6 @@ export default function App() {
   }, [checked]);
 
   const answeredCount = Object.values(checked).filter(Boolean).length;
-  const hasInteracted = Object.keys(checked).length > 0;
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -568,9 +771,10 @@ export default function App() {
       await exportResultImage({
         score: result.score,
         rank: result.rank,
+        type: result.type,
+        gender: gender ?? "female",
         total: result.total,
         totalMax: QUESTIONS.length,
-        typeName: result.type.name,
         diagLabel: result.diag.label,
         logoSrc: btoeLogo,
       });
@@ -620,14 +824,44 @@ export default function App() {
         {/* イントロ */}
         <div className="space-y-2">
           <p className="font-display text-xl font-bold text-center">
-            その一言、<span className="text-rose">パワハラ</span>になっていませんか？
+            AIに聞いてもわからない。あなたの<span className="text-rose">伝え方のクセ</span>
           </p>
           <p className="text-sm text-ink/60 leading-relaxed text-center">
-            言っていることは、間違っていないはずなのに。当てはまる項目にチェックを入れると、
-            <span className="text-rose font-medium">あなたのタイプ</span>と
-            <span className="text-rose font-medium">NGワード→OK変換</span>が一瞬でわかります。
+            全6タイプ｜当てはまる項目にチェックを入れると、
+            <span className="text-rose font-medium">あなたが社長図鑑のどのタイプか</span>
+            と、<span className="text-rose font-medium">NGワード→OK変換</span>が一瞬でわかります。
           </p>
         </div>
+
+        {/* 性別選択（結果イラストの出し分けに使用） */}
+        <section className="bg-white rounded-salon shadow-salon p-5 md:p-6">
+          <p className="text-sm font-medium mb-1">あなたの性別を教えてください</p>
+          <p className="text-xs text-ink/40 mb-4">診断結果のイラストの出し分けに使用します</p>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setGender("male")}
+              style={gender === "male" ? { backgroundColor: "#111111" } : undefined}
+              className={`rounded-salon py-4 text-sm font-medium transition border ${
+                gender === "male"
+                  ? "text-white border-transparent"
+                  : "border-sand text-ink/60 hover:border-rose/40"
+              }`}
+            >
+              男性
+            </button>
+            <button
+              onClick={() => setGender("female")}
+              style={gender === "female" ? { backgroundColor: "#111111" } : undefined}
+              className={`rounded-salon py-4 text-sm font-medium transition border ${
+                gender === "female"
+                  ? "text-white border-transparent"
+                  : "border-sand text-ink/60 hover:border-rose/40"
+              }`}
+            >
+              女性
+            </button>
+          </div>
+        </section>
 
         {/* 診断フォーム */}
         <section className="bg-white rounded-salon shadow-salon p-5 md:p-6 space-y-6">
@@ -655,11 +889,7 @@ export default function App() {
           </div>
 
           {CATEGORIES.map((cat) => (
-            <div key={cat.key} className="space-y-2.5">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-ink/50 tracking-wide">
-                <span className="text-rose">{cat.icon}</span>
-                {cat.label}
-              </div>
+            <div key={cat.key} className="space-y-2 pt-4 first:pt-0 border-t border-sand/60 first:border-t-0">
               <div className="space-y-2">
                 {QUESTIONS.filter((q) => q.category === cat.key).map((q) => (
                   <label
@@ -686,33 +916,82 @@ export default function App() {
           <div className="text-center text-xs text-ink/40 pt-1">
             現在 {answeredCount} / {QUESTIONS.length} 項目にチェック中
           </div>
+
+          <button
+            onClick={handleDiagnose}
+            disabled={!canDiagnose}
+            style={canDiagnose ? { backgroundColor: "#111111" } : undefined}
+            className={`w-full flex items-center justify-center gap-2 rounded-salon font-medium py-4 transition ${
+              canDiagnose
+                ? "text-white hover:opacity-90 cursor-pointer"
+                : "bg-sand/40 text-ink/30 cursor-not-allowed"
+            }`}
+          >
+            あなたのタイプを診断する
+            <ArrowRight size={16} />
+          </button>
+          {!canDiagnose && (
+            <p className="text-center text-xs text-ink/40 -mt-3">
+              {gender === null ? "性別を選んで、1つ以上チェックすると診断できます" : "1つ以上チェックすると診断できます"}
+            </p>
+          )}
         </section>
 
         {/* 結果 */}
-        {!hasInteracted ? (
+        {!submitted ? (
           <section className="bg-white/60 border border-dashed border-sand rounded-salon p-10 text-center animate-fade-in-up">
             <Info size={28} className="mx-auto text-rose/60 mb-3" />
             <p className="text-sm text-ink/50 leading-relaxed">
-              チェックを入れると、診断結果とNGワード変換表がここに表示されます。
+              当てはまる項目にチェックを入れて、「あなたのタイプを診断する」を押すと、
               <br />
-              まずは正直に、当てはまるものから始めましょう。
+              診断結果とNGワード変換表がここに表示されます。
             </p>
           </section>
         ) : (
           <>
-            {/* あなたは〇〇タイプ（診断のメイン結果） */}
-            <section className="bg-white rounded-salon shadow-salon p-6 md:p-8 animate-fade-in-up text-center">
-              <p className="text-xs text-rose font-medium tracking-widest mb-2">診断結果</p>
-              <h2 className="font-display font-bold text-2xl md:text-3xl mb-3">
-                あなたは
-                <span className="text-rose">{result.type.name}</span>
-              </h2>
-              <p className="text-sm text-ink/70 max-w-md mx-auto leading-relaxed mb-6">
+            {/* あなたは〇〇タイプ（診断のメイン結果／キャラクター付き） */}
+            <section
+              className="rounded-salon shadow-salon p-6 md:p-8 animate-fade-in-up text-center"
+              style={{ backgroundColor: heroImageLoaded ? result.type.bgHex : "#FFFFFF" }}
+            >
+              {!heroImageLoaded && (
+                <p className="text-xs text-rose font-medium tracking-widest mb-4">診断結果　{result.type.order}</p>
+              )}
+
+              <div className="flex justify-center mb-5">
+                <CharacterAvatar type={result.type} gender={gender ?? "female"} width={240} onStatus={setHeroImageLoaded} />
+              </div>
+
+              {!heroImageLoaded && (
+                <>
+                  <div
+                    className="inline-block px-4 py-2 rounded-2xl mb-3 relative"
+                    style={{ backgroundColor: `${result.type.colorHex}14` }}
+                  >
+                    <p className="text-sm font-medium" style={{ color: result.type.colorHex }}>
+                      「{result.type.voice}」
+                    </p>
+                  </div>
+
+                  <h2 className="font-display font-bold text-2xl md:text-3xl mb-1">{result.type.label}</h2>
+                  <p className="text-xs text-ink/40 mb-5">{result.type.catch}</p>
+                </>
+              )}
+
+              <p
+                className="text-sm max-w-md mx-auto leading-relaxed mb-6"
+                style={{ color: heroImageLoaded ? "#111111CC" : undefined }}
+              >
                 {result.type.description}
               </p>
 
-              <div className="border-t border-sand pt-5">
-                <div className="font-display text-4xl font-bold">{result.total} / {QUESTIONS.length}</div>
+              <div
+                className="border-t pt-5"
+                style={{ borderColor: heroImageLoaded ? `${result.type.colorHex}55` : undefined }}
+              >
+                <div className="font-display text-4xl font-bold">
+                  {result.total} / {QUESTIONS.length}
+                </div>
                 <div className="text-xs text-ink/40 mb-2">該当した項目数</div>
                 <div
                   className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-2"
@@ -731,13 +1010,13 @@ export default function App() {
             <section className="bg-white rounded-salon shadow-salon p-5 md:p-6 animate-fade-in-up space-y-4">
               <h2 className="font-display font-bold text-lg flex items-center gap-2">
                 <ListChecks size={18} className="text-rose" />
-                カテゴリ別の内訳
+                6タイプ別の内訳
               </h2>
               <div className="space-y-3">
                 {CATEGORIES.map((cat) => (
                   <CategoryBar
                     key={cat.key}
-                    label={cat.label}
+                    label={`${cat.order} ${cat.label}`}
                     count={result.categoryCounts[cat.key]}
                     max={CATEGORY_MAX[cat.key]}
                     color={categoryColor(result.categoryCounts[cat.key], CATEGORY_MAX[cat.key])}
@@ -750,9 +1029,9 @@ export default function App() {
             <section className="bg-white rounded-salon shadow-salon p-5 md:p-6 animate-fade-in-up">
               <h2 className="font-display font-bold text-lg mb-1 flex items-center gap-2">
                 <ListChecks size={18} className="text-rose" />
-                改善優先順位
+                改善優先順位トップ3
               </h2>
-              <p className="text-xs text-ink/40 mb-4">該当が多いカテゴリから、優先的に見直しましょう</p>
+              <p className="text-xs text-ink/40 mb-4">該当が多いタイプ傾向から、優先的に見直しましょう</p>
               <div className="space-y-3">
                 {result.priorities.map((p) => (
                   <div key={p.category.key} className="flex gap-3 items-start rounded-salon border border-sand p-4">
@@ -764,9 +1043,11 @@ export default function App() {
                     </div>
                     <div>
                       <div className="font-semibold text-sm flex items-center gap-1.5">
-                        {p.category.icon}
-                        {p.category.label}
-                        <span className="text-xs text-ink/40 font-normal">（{p.count}/{p.max}）</span>
+                        <span style={{ color: p.category.colorHex }}>{p.category.icon}</span>
+                        {p.category.order} {p.category.label}
+                        <span className="text-xs text-ink/40 font-normal">
+                          （{p.count}/{p.max}）
+                        </span>
                       </div>
                       <div className="text-xs text-ink/60 mt-0.5 leading-relaxed">{p.advice}</div>
                     </div>
@@ -781,9 +1062,7 @@ export default function App() {
                 <MessageSquareWarning size={18} className="text-rose" />
                 NGワード → OK変換
               </h2>
-              <p className="text-xs text-ink/40 mb-4">
-                同じ指摘を、同じ強度で、リスクなく伝えるための変換です
-              </p>
+              <p className="text-xs text-ink/40 mb-4">同じ指摘を、同じ強度で、リスクなく伝えるための変換です</p>
               {result.checkedQuestions.length === 0 ? (
                 <p className="text-sm text-ink/50">該当する項目はありませんでした。</p>
               ) : (
@@ -823,10 +1102,7 @@ export default function App() {
 
             {/* 共感メッセージ・ストレス解消法（上品な便箋デザイン） */}
             <section className="animate-fade-in-up">
-              <div
-                className="relative rounded-salon border border-sand p-8 md:p-10"
-                style={{ backgroundColor: "#FFFDF9" }}
-              >
+              <div className="relative rounded-salon border border-sand p-8 md:p-10" style={{ backgroundColor: "#FFFDF9" }}>
                 <p className="text-[11px] tracking-[0.3em] text-rose/70 mb-1">FROM ALLY</p>
                 <h2 className="font-display text-lg font-bold mb-6">社長へ</h2>
 
@@ -858,9 +1134,7 @@ export default function App() {
 
                 <div className="border-t border-sand pt-7 mb-8 text-center">
                   <p className="text-sm text-ink/70 mb-1">1人で抱えなくて、大丈夫。</p>
-                  <p className="text-xs text-ink/40 mb-5">
-                    いつか、同じ立場の社長同士で、飲み会でもしましょう。
-                  </p>
+                  <p className="text-xs text-ink/40 mb-5">いつか、同じ立場の社長同士で、飲み会でもしましょう。</p>
                   <a
                     href={COMMUNITY_URL}
                     target="_blank"
@@ -882,7 +1156,7 @@ export default function App() {
                 <Share2 size={14} />
                 この結果をシェアしよう
               </div>
-              <div className="relative overflow-hidden rounded-salon shadow-salon-lg bg-gradient-to-br from-ink via-[#2E2038] to-purple text-white p-7">
+              <div className="relative overflow-hidden rounded-salon shadow-salon-lg bg-gradient-to-br from-ink via-[#2E2038] text-white p-7" style={{ backgroundImage: `linear-gradient(135deg, #111111, #2E2038, ${result.type.colorHex})` }}>
                 <div
                   className="absolute inset-0 opacity-20"
                   style={{
@@ -903,20 +1177,32 @@ export default function App() {
                     <RankBadge rank={result.rank} size="lg" />
                   </div>
 
-                  <div className="mb-6">
-                    <div className="text-xs text-white/60 mb-1">あなたは</div>
-                    <div className="font-display text-3xl font-bold leading-tight text-rose">
-                      {result.type.name}
-                    </div>
+                  <div className="flex justify-center mb-5">
+                    <CharacterAvatar type={result.type} gender={gender ?? "female"} width={160} onStatus={setHeroImageLoaded} />
                   </div>
 
-                  <div className="mb-6">
+                  {!heroImageLoaded && (
+                    <div className="mb-6 text-center">
+                      <div className="text-xs text-white/60 mb-1">あなたは</div>
+                      <div
+                        className="font-display text-2xl font-bold leading-tight"
+                        style={{ color: result.type.colorHex }}
+                      >
+                        {result.type.label}
+                      </div>
+                      <div className="text-xs text-white/50 mt-1">「{result.type.voice}」</div>
+                    </div>
+                  )}
+
+                  <div className="mb-6 text-center">
                     <div className="text-xs text-white/60 mb-1">該当項目数</div>
-                    <div className="font-display text-5xl font-bold leading-none">{result.total} / {QUESTIONS.length}</div>
+                    <div className="font-display text-5xl font-bold leading-none">
+                      {result.total} / {QUESTIONS.length}
+                    </div>
                     <div className="text-sm font-medium mt-3">{result.diag.label}</div>
                   </div>
 
-                  <div className="mt-6 text-[10px] text-white/40 tracking-wide">
+                  <div className="mt-6 text-[10px] text-white/40 tracking-wide text-center">
                     #BtoE式社長の伝達ロス診断 #美容サロン経営
                   </div>
                 </div>

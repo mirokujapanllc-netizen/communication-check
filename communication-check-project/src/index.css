@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Yomogi&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Zen+Kurenaido&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -8,8 +8,11 @@ html, body, #root {
   height: 100%;
 }
 body {
-  background-color: #F8F5F2;
-  color: #222222;
+  background-color: #F5F0E4;
+  color: #111111;
+  /* 上品な波モチーフをごく薄く敷いたテクスチャ（クラシックハワイのラグジュアリー感） */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='60' viewBox='0 0 240 60'%3E%3Cpath d='M0 30 Q 30 10, 60 30 T 120 30 T 180 30 T 240 30' fill='none' stroke='%2344C1BE' stroke-opacity='0.06' stroke-width='2'/%3E%3Cpath d='M0 45 Q 30 25, 60 45 T 120 45 T 180 45 T 240 45' fill='none' stroke='%23B48BC7' stroke-opacity='0.05' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: repeat;
 }
 ::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-thumb { background-color: #E9B8C4; border-radius: 999px; }
+::-webkit-scrollbar-thumb { background-color: #FF8DA1; border-radius: 999px; }

@@ -4,26 +4,29 @@ export default {
   theme: {
     extend: {
       colors: {
-        cream: "#F8F5F2",
-        rose: "#E96A8D",
-        "rose-deep": "#B23A5C",
-        ink: "#222222",
-        sand: "#EAE3DD",
+        // 公式ブランドカラー（クラシックハワイ×ラグジュアリー）
+        cream: "#F5F0E4",       // 背景：白ではなく温かみのあるアイボリーサンド
+        rose: "#FF8DA1",        // Plumeria Pink（メインアクセント）
+        "rose-deep": "#D9536F", // Plumeria Pink（濃・ホバー用）
+        ink: "#111111",         // Deep Black
+        sand: "#E6DCC3",        // ボーダー・区切り（温かみのあるサンドベージュ）
+        ocean: "#44C1BE",       // Ocean Blue
+        purple: "#B48BC7",      // Hawaiian Purple
         sage: "#4C9A6A",
-        gold: "#D9A441",
+        gold: "#C9A66B",        // ラグジュアリーゴールド
         brick: "#C94F4F",
       },
       fontFamily: {
         display: ["'Shippori Mincho'", "serif"],
         body: ["'Zen Kaku Gothic New'", "sans-serif"],
-        hand: ["'Yomogi'", "'Shippori Mincho'", "sans-serif"],
+        hand: ["'Zen Kurenaido'", "'Shippori Mincho'", "sans-serif"],
       },
       borderRadius: {
         salon: "16px",
       },
       boxShadow: {
-        salon: "0 8px 30px -12px rgba(34,34,34,0.15)",
-        "salon-lg": "0 20px 50px -20px rgba(233,106,141,0.35)",
+        salon: "0 8px 30px -12px rgba(17,17,17,0.15)",
+        "salon-lg": "0 20px 50px -20px rgba(255,141,161,0.35)",
       },
       keyframes: {
         "fade-in-up": {
