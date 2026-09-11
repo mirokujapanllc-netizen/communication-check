@@ -354,7 +354,7 @@ const SAMPLE_CHECKED: Record<string, boolean> = {
 const NOTE_URL = "https://note.com/your_note_url_here";
 
 /** 社長同士の交流コミュニティ・LINEなどのURL。実際のリンクに差し替えてください */
-const COMMUNITY_URL = "https://note.com/arii_btoe/n/n0d99538875db";
+const COMMUNITY_URL = "https://lin.ee/ueMTmdz";
 
 /** おすすめのストレス解消法 */
 interface StressTip {
